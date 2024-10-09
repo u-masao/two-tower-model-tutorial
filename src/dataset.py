@@ -148,6 +148,7 @@ def split_dataset(
 @click.argument("output_path", type=click.Path())
 @click.option("--mlflow_run_name", type=str, default="develop")
 @click.option("--test_sample_ratio", type=float, default=0.2)
+@click.option("--limit", type=int, default=0)
 def main(**kwargs):
 
     # init log
@@ -165,6 +166,11 @@ def main(**kwargs):
         kwargs["input_items_path"],
         kwargs["input_ratings_path"],
     )
+
+    limit = kwargs["limit"]
+    if limit != 0:
+        users = users.sample(limit)
+        items = items.sample(limit)
 
     # debug output
     for df in [users, items, ratings]:

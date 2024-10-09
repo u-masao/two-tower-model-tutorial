@@ -27,6 +27,7 @@ stages:
       "data/raw/Book reviews/Book reviews/BX_Books.csv"
       "data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv"
       data/interim/dataset.cloudpickle
+      --limit=10000
     deps:
     - src/dataset.py
     - data/raw/Book reviews/Book reviews/BX-Users.csv
