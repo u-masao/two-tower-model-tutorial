@@ -1,0 +1,40 @@
+schema: '2.0'
+stages:
+  download_data:
+    cmd: kaggle datasets download -d ruchi798/bookcrossing-dataset -p data/raw/
+    outs:
+    - path: data/raw/bookcrossing-dataset.zip
+      hash: md5
+      md5: 50bce6d5bd23374f829227a31b21d884
+      size: 79772605
+  extract_dataset:
+    cmd: unzip data/raw/bookcrossing-dataset.zip -d data/raw/
+    deps:
+    - path: data/raw/bookcrossing-dataset.zip
+      hash: md5
+      md5: 50bce6d5bd23374f829227a31b21d884
+      size: 79772605
+    outs:
+    - path: data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
+      hash: md5
+      md5: 7ab62f5bddcc82f47cbed0615530805a
+      size: 30682276
+    - path: data/raw/Book reviews/Book reviews/BX-Users.csv
+      hash: md5
+      md5: cca22ab4cb53125b5d503496597123a5
+      size: 12284157
+    - path: data/raw/Book reviews/Book reviews/BX_Books.csv
+      hash: md5
+      md5: 04b9710434f92eadabc0709a5d97a8bc
+      size: 77430569
+    - path: data/raw/Books Data with Category Language and Summary/Preprocessed_data.csv
+      hash: md5
+      md5: dea9206a46573038decd0977c0433616
+      size: 479942599
+  download_dataset:
+    cmd: kaggle datasets download -d ruchi798/bookcrossing-dataset -p data/raw/
+    outs:
+    - path: data/raw/bookcrossing-dataset.zip
+      hash: md5
+      md5: 50bce6d5bd23374f829227a31b21d884
+      size: 79772605

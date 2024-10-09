@@ -1,0 +1,36 @@
+stages:
+
+  download_dataset:
+    cmd: >-
+      kaggle datasets download
+      -d ruchi798/bookcrossing-dataset
+      -p data/raw/
+    outs:
+    - data/raw/bookcrossing-dataset.zip
+
+  extract_dataset:
+    cmd: >-
+      unzip data/raw/bookcrossing-dataset.zip
+      -d data/raw/
+    deps:
+    - data/raw/bookcrossing-dataset.zip
+    outs:
+    - data/raw/Book reviews/Book reviews/BX_Books.csv
+    - data/raw/Book reviews/Book reviews/BX-Users.csv
+    - data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
+    - data/raw/Books Data with Category Language and Summary/Preprocessed_data.csv
+
+  pack_dataset:
+    cmd: >-
+      poetry run python -m src.dataset
+      "data/raw/Book reviews/Book reviews/BX_Books.csv"
+      "data/raw/Book reviews/Book reviews/BX-Users.csv"
+      "data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv"
+      data/interim/dataset.cloudpickle
+    deps:
+    - src/dataset.py
+    - data/raw/Book reviews/Book reviews/BX_Books.csv
+    - data/raw/Book reviews/Book reviews/BX-Users.csv
+    - data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
+    outs:
+    - data/interim/dataset.cloudpickle
