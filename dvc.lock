@@ -38,3 +38,29 @@ stages:
       hash: md5
       md5: 50bce6d5bd23374f829227a31b21d884
       size: 79772605
+  pack_dataset:
+    cmd: poetry run python -m src.dataset "data/raw/Book reviews/Book reviews/BX_Books.csv"
+      "data/raw/Book reviews/Book reviews/BX-Users.csv" "data/raw/Book reviews/Book
+      reviews/BX-Book-Ratings.csv" data/interim/dataset.cloudpickle
+    deps:
+    - path: data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
+      hash: md5
+      md5: 7ab62f5bddcc82f47cbed0615530805a
+      size: 30682276
+    - path: data/raw/Book reviews/Book reviews/BX-Users.csv
+      hash: md5
+      md5: cca22ab4cb53125b5d503496597123a5
+      size: 12284157
+    - path: data/raw/Book reviews/Book reviews/BX_Books.csv
+      hash: md5
+      md5: 04b9710434f92eadabc0709a5d97a8bc
+      size: 77430569
+    - path: src/dataset.py
+      hash: md5
+      md5: d4d6f98371d258ccd3764fe66021c673
+      size: 1961
+    outs:
+    - path: data/interim/dataset.cloudpickle
+      hash: md5
+      md5: f510a03e97545d36137b6c5a29eb6535
+      size: 109244858
