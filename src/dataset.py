@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict
 
 import click
@@ -81,36 +82,50 @@ def split_dataset(
     ratings: pd.DataFrame,
     test_sample_ratio: float,
     random_state: int = 1234,
+    item_filter_start: int = 1980,
+    item_filter_end: int = 2004,
+    item_key: str = "isbn",
+    user_key: str = "user-id",
+    item_year_column: str = "year-of-publication",
 ) -> Dict[str, Any]:
 
     # users: random split
     users_test = users.sample(
-        frac=test_sample_ratio, random_state=random_state
+        frac=1 / (1 + math.sqrt(1 / test_sample_ratio - 1)),
+        random_state=random_state,
     )
     users_train = users.drop(users_test.index)
 
     # items: time series split(publish year)
-    year_column = "year-of-publication"
     target_items = items[
-        items[year_column].between(1950, 2020, inclusive="both")
+        items[item_year_column].between(
+            item_filter_start, item_filter_end, inclusive="both"
+        )
     ]
-    year_threshold = (
-        ratings.merge(target_items, on="isbn", how="inner")[year_column]
-        .quantile(1 - test_sample_ratio)
-        .item()
+    target_ratings = ratings.merge(
+        target_items[[item_key, item_year_column]], on=item_key, how="inner"
     )
-    items_test = target_items[target_items[year_column] >= year_threshold]
+    year_threshold = (
+        target_ratings[item_year_column].quantile(1 - test_sample_ratio).item()
+    )
+    items_test = target_items[target_items[item_year_column] >= year_threshold]
     items_train = target_items.drop(items_test.index)
 
+    # debug output
+    logger.info(
+        pd.cut(target_ratings[item_year_column], 25)
+        .value_counts()
+        .sort_index()
+    )
     logger.info(f"{year_threshold=}")
 
     # ratings: depends users and items
     ratings_test = ratings.merge(
-        users_test["user-id"], how="inner", on="user-id"
-    ).merge(items_test["isbn"], how="inner", on="isbn")
-    ratings_train = ratings.merge(
-        users_train, how="inner", on="user-id"
-    ).merge(items_train, how="inner", on="isbn")
+        users_test[user_key], how="inner", on=user_key
+    ).merge(items_test[item_key], how="inner", on=item_key)
+    ratings_train = ratings.merge(users_train, how="inner", on=user_key).merge(
+        items_train, how="inner", on=item_key
+    )
 
     return {
         "train": {
@@ -165,18 +180,25 @@ def main(**kwargs):
         test_sample_ratio=kwargs["test_sample_ratio"],
     )
 
-    # make output data
-    log_params = {}
-    for train_test in ["train", "test"]:
-        for key in ["users", "items", "ratings"]:
-            df = splitted[train_test][key]
-            log_params[f"input.length.{train_test}.{key}"] = df.shape[0]
-            log_params[f"input.columns.{train_test}.{key}"] = df.shape[1]
-
     # output file
     cloudpickle.dump(splitted, open(kwargs["output_path"], "wb"))
 
     # logging
+    log_params = {}
+    for train_test in ["train", "test"]:
+        for key in ["users", "items", "ratings"]:
+            df = splitted[train_test][key]
+            log_params[f"output.length.{train_test}.{key}"] = df.shape[0]
+            log_params[f"output.columns.{train_test}.{key}"] = df.shape[1]
+
+    for key in ["users", "items", "ratings"]:
+        ratio = log_params[f"output.length.test.{key}"] / (
+            log_params[f"output.length.train.{key}"]
+            + log_params[f"output.length.test.{key}"]
+        )
+        metric = {f"ratio_{key}": ratio}
+        logger.info(metric)
+        mlflow.log_params(metric)
     mlflow.log_params(log_params)
     logger.info(log_params)
 
