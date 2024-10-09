@@ -34,3 +34,14 @@ stages:
     - data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
     outs:
     - data/interim/dataset.cloudpickle
+
+  build_features:
+    cmd: >-
+      poetry run python -m src.features
+      data/interim/dataset.cloudpickle
+      data/interim/features.cloudpickle
+    deps:
+    - src/features.py
+    - data/interim/dataset.cloudpickle
+    outs:
+    - data/interim/features.cloudpickle
