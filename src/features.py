@@ -6,6 +6,7 @@ import mlflow
 import pandas as pd
 import torch.nn.functional as F
 from loguru import logger
+from object_cache import object_cache
 from torch import Tensor
 from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer
@@ -57,6 +58,7 @@ def make_sentences(dataset: Dict[str, Any]):
     return sentences
 
 
+@object_cache
 def embed(
     sentences: List[str],
     model_name: str = "intfloat/multilingual-e5-small",
@@ -87,7 +89,22 @@ def embed(
     return embeddings.detach().numpy()
 
 
-def build_features(dataset: Dict[str, Any], threshold=5):
+def embed_chunked(
+    data, sentences, data_name, data_key, data_prefix, chunk_size
+):
+    items = []
+    for i in tqdm(range(0, len(sentences[data_name]), chunk_size)):
+        item_embeds = embed(sentences[data_name][i:].head(chunk_size))
+        temp_df = pd.DataFrame(
+            item_embeds,
+            index=data[data_name][data_key][i:].head(chunk_size),
+            columns=[f"{data_prefix}{x}" for x in range(item_embeds.shape[1])],
+        )
+        items.append(temp_df)
+    return pd.concat(items)
+
+
+def build_features(dataset: Dict[str, Any], threshold=5, chunk_size=100):
     result = {}
     for category in ["train", "test"]:
 
@@ -95,31 +112,14 @@ def build_features(dataset: Dict[str, Any], threshold=5):
         sentences = make_sentences(dataset[category])
 
         # make user embeds
-        chunk_size = 100
-        users = []
-        for i in tqdm(range(0, len(sentences["users"]), chunk_size)):
-            user_embeds = embed(sentences["users"][i:].head(chunk_size))
-            temp_df = pd.DataFrame(
-                user_embeds,
-                index=dataset[category]["users"]["user-id"][i:].head(
-                    chunk_size
-                ),
-                columns=[f"u{x}" for x in range(user_embeds.shape[1])],
-            )
-            users.append(temp_df)
-        users_df = pd.concat(users)
+        users_df = embed_chunked(
+            dataset[category], sentences, "users", "user-id", "u", chunk_size
+        )
 
         # make item embeds
-        items = []
-        for i in tqdm(range(0, len(sentences["users"]), chunk_size)):
-            item_embeds = embed(sentences["items"][i:].head(chunk_size))
-            temp_df = pd.DataFrame(
-                item_embeds,
-                index=dataset[category]["items"]["isbn"][i:].head(chunk_size),
-                columns=[f"i{x}" for x in range(item_embeds.shape[1])],
-            )
-            items.append(temp_df)
-        items_df = pd.concat(items)
+        items_df = embed_chunked(
+            dataset[category], sentences, "items", "isbn", "i", chunk_size
+        )
 
         # merge
         ratings = dataset[category]["ratings"]
@@ -155,7 +155,7 @@ def main(**kwargs):
     features = build_features(dataset)
 
     # output file
-    cloudpickle.dump(features, open(kwargs["output_path"], "wb"))
+    cloudpickle.dump(features, open(kwargs["output_filepath"], "wb"))
 
     # logging
 
