@@ -702,13 +702,13 @@ testing = ["pytest (>=7.2.1)", "pytest-cov (>=4.0.0)", "tox (>=4.4.3)"]
 
 [[package]]
 name = "cloudpickle"
-version = "3.0.0"
-description = "Pickler class to extend the standard pickle.Pickler functionality"
+version = "1.6.0"
+description = "Extended pickling support for Python objects"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.5"
 files = [
-    {file = "cloudpickle-3.0.0-py3-none-any.whl", hash = "sha256:246ee7d0c295602a036e86369c77fecda4ab17b506496730f2f576d9016fd9c7"},
-    {file = "cloudpickle-3.0.0.tar.gz", hash = "sha256:996d9a482c6fb4f33c1a35335cf8afd065d2a56e973270364840712d9131a882"},
+    {file = "cloudpickle-1.6.0-py3-none-any.whl", hash = "sha256:3a32d0eb0bc6f4d0c57fbc4f3e3780f7a81e6fee0fa935072884d58ae8e1cc7c"},
+    {file = "cloudpickle-1.6.0.tar.gz", hash = "sha256:9bc994f9e9447593bd0a45371f0e7ac7333710fcf64a4eb9834bf149f4ef2f32"},
 ]
 
 [[package]]
@@ -2812,6 +2812,20 @@ files = [
     {file = "nvidia_nvtx_cu12-12.1.105-py3-none-manylinux1_x86_64.whl", hash = "sha256:dc21cf308ca5691e7c04d962e213f8a4aa9bbfa23d95412f452254c2caeb09e5"},
     {file = "nvidia_nvtx_cu12-12.1.105-py3-none-win_amd64.whl", hash = "sha256:65f4d98982b31b60026e0e6de73fbdfc09d08a96f4656dd3665ca616a11e1e82"},
 ]
+
+[[package]]
+name = "object-cache"
+version = "0.1.6"
+description = "This module caches the result of function."
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "object-cache-0.1.6.tar.gz", hash = "sha256:fc2f2de71e8549d34d36c5a02b46518b3bd6c1e8a686a5efbfb76d8756ec0dd5"},
+    {file = "object_cache-0.1.6-py3-none-any.whl", hash = "sha256:fe8e18e5f51076238c86355fcef3fece70ea961bf32637e8329564b5351479c1"},
+]
+
+[package.dependencies]
+cloudpickle = ">=1.6.0,<2.0.0"
 
 [[package]]
 name = "omegaconf"
@@ -5264,4 +5278,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "c3d7a95f9dc9400bd5a62ea74c95f9dbd0baa377bad50995133ba3245ef4e64f"
+content-hash = "7b12b0370fba65f30d160d08bdb005758e23a5d92b527a27a6c4be960a34ccb0"
