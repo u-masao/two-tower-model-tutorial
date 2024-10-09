@@ -137,6 +137,7 @@ def build_features(dataset: Dict[str, Any], threshold=5, chunk_size=100):
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
 @click.option("--mlflow_run_name", type=str, default="develop")
+@click.option("--chunk_size", type=int, default=1000)
 def main(**kwargs):
 
     # init log
@@ -152,7 +153,7 @@ def main(**kwargs):
     dataset = load_dataset(kwargs["input_filepath"])
 
     # build features
-    features = build_features(dataset)
+    features = build_features(dataset, chunk_size=kwargs["chunk_size"])
 
     # output file
     cloudpickle.dump(features, open(kwargs["output_filepath"], "wb"))

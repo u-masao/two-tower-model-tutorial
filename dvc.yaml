@@ -41,6 +41,7 @@ stages:
       poetry run python -m src.features
       data/interim/dataset.cloudpickle
       data/interim/features.cloudpickle
+      --chunk_size=${embedding_chunk_size}
     deps:
     - src/features.py
     - data/interim/dataset.cloudpickle
