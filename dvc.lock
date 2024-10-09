@@ -41,7 +41,7 @@ stages:
   pack_dataset:
     cmd: poetry run python -m src.dataset "data/raw/Book reviews/Book reviews/BX-Users.csv"
       "data/raw/Book reviews/Book reviews/BX_Books.csv" "data/raw/Book reviews/Book
-      reviews/BX-Book-Ratings.csv" data/interim/dataset.cloudpickle --limit=0
+      reviews/BX-Book-Ratings.csv" data/interim/dataset.cloudpickle --limit=20000
     deps:
     - path: data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
       hash: md5
@@ -62,5 +62,5 @@ stages:
     outs:
     - path: data/interim/dataset.cloudpickle
       hash: md5
-      md5: 5173458e8cd9fca873ca7fb5d30d07e6
-      size: 93850967
+      md5: eda51ba431e4eb463972c262e5ae8a72
+      size: 6172333
