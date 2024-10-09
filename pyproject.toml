@@ -41,6 +41,10 @@ authors = ["u-masao"]
 python = "^3.10"
 kaggle = "^1.6.17"
 mlflow = "^2.16.2"
+sentence-transformers = "^3.1.1"
+loguru = "^0.7.2"
+python-dotenv = "^1.0.1"
+cloudpickle = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
