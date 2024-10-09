@@ -13,7 +13,7 @@ PYTHON_INTERPRETER = python
 ## run dvc repro
 .PHONY: repro
 repro: check_commit PIPELINE.md
-	poetry run dvc rerpo
+	poetry run dvc repro
 	git commit dvc.lock -m 'run dvc repro' || true
 
 ## check commit
