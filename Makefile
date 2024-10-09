@@ -12,7 +12,7 @@ PYTHON_INTERPRETER = python
 
 ## run dvc repro
 .PHONY: repro
-repro: check_commit PIPELINE.md
+repro: check_commit PIPELINE.md requirements.txt.lastrun
 	poetry run dvc repro
 	git commit dvc.lock -m 'run dvc repro' || true
 
@@ -30,7 +30,12 @@ PIPELINE.md: dvc.yaml params.yaml
 	poetry run dvc dag --md >> $@
 	echo '\n\n## output file DAG\n\n' >> $@
 	poetry run dvc dag --md --out >> $@
-	git commit $@ -m 'update dvc pipeline'
+	git commit $@ -m 'update dvc pipeline' || true
+
+## last run packages
+requirements.txt.lastrun: poetry.lock
+	poetry export -f requirements.txt -o $@ --without-hashes
+	git commit $@ -m 'update requirements.txt lastrun' || true
 
 ## Install Python Dependencies
 .PHONY: requirements
