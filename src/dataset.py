@@ -123,9 +123,9 @@ def split_dataset(
     ratings_test = ratings.merge(
         users_test[user_key], how="inner", on=user_key
     ).merge(items_test[item_key], how="inner", on=item_key)
-    ratings_train = ratings.merge(users_train, how="inner", on=user_key).merge(
-        items_train, how="inner", on=item_key
-    )
+    ratings_train = ratings.merge(
+        users_train[user_key], how="inner", on=user_key
+    ).merge(items_train[item_key], how="inner", on=item_key)
 
     return {
         "train": {
