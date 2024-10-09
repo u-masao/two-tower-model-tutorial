@@ -18,7 +18,7 @@ repro: check_commit PIPELINE.md
 
 ## check commit
 .PHONY: check_commit
-check_commit:
+check_commit: lint
 	git status
 	git diff --exit-code
 	git diff --exit-code --staged
