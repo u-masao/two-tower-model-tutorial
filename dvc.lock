@@ -57,10 +57,10 @@ stages:
       size: 77430569
     - path: src/dataset.py
       hash: md5
-      md5: ef98495af89aa91a09cf9d330ef59470
-      size: 5268
+      md5: 66f15d3ce42c8cfe5a697c1cbbfdc140
+      size: 5560
     outs:
     - path: data/interim/dataset.cloudpickle
       hash: md5
-      md5: 9ae018e0887cf7f03f093160be5158dc
-      size: 122199380
+      md5: ad195a56cceee43370471bf6260f8b72
+      size: 118709876
