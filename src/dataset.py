@@ -102,6 +102,8 @@ def split_dataset(
     items_test = target_items[target_items[year_column] >= year_threshold]
     items_train = target_items.drop(items_test.index)
 
+    logger.info(f"{year_threshold=}")
+
     # ratings: depends users and items
     ratings_test = ratings.merge(
         users_test["user-id"], how="inner", on="user-id"
