@@ -1,3 +1,2 @@
-# dataset_limit: 100000
-dataset_limit: 3000
+dataset_limit: 0
 embedding_chunk_size: 100
