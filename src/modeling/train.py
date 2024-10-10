@@ -55,6 +55,8 @@ def train(dataloader, num_epochs=3):
             loss.backward()
             optimizer.step()
 
+    return model
+
 
 def load_dataset(input_filepath):
     data = cloudpickle.load(open(input_filepath, "rb"))["train"]
@@ -71,6 +73,7 @@ def make_dataloader(dataset):
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
 @click.option("--mlflow_run_name", type=str, default="develop")
+@click.option("--num_epochs", type=int, default=1)
 def main(**kwargs):
 
     # init log
@@ -89,7 +92,7 @@ def main(**kwargs):
     dataloader = make_dataloader(dataset)
 
     # build features
-    model = train(dataloader)
+    model = train(dataloader, num_epochs=kwargs["num_epochs"])
 
     # output file
     torch.save(model.state_dict(), kwargs["output_filepath"])
