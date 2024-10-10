@@ -53,6 +53,8 @@ stages:
       poetry run python -m src.modeling.train
       data/interim/features.cloudpickle
       models/model.pth
+      --num_epochs=${num_epochs}
+      --batch_size=${batch_size}
     deps:
     - src/modeling/train.py
     - data/interim/features.cloudpickle
