@@ -1,4 +1,4 @@
-from typing import List, NoneType, Tuple
+from typing import List, Tuple
 
 import click
 import cloudpickle
@@ -22,7 +22,7 @@ class TripletDataset(Dataset):
         item_embeds: pd.DataFrame,
         ratings: pd.DataFrame,
         rating_threshold: int = 5,
-    ) -> NoneType:
+    ) -> None:
         self.user_embeds: pd.DataFrame = user_embeds
         self.item_embeds: pd.DataFrame = item_embeds
         self.ratings: pd.DataFrame = ratings
