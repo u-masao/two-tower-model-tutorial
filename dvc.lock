@@ -41,7 +41,7 @@ stages:
   pack_dataset:
     cmd: poetry run python -m src.dataset "data/raw/Book reviews/Book reviews/BX-Users.csv"
       "data/raw/Book reviews/Book reviews/BX_Books.csv" "data/raw/Book reviews/Book
-      reviews/BX-Book-Ratings.csv" data/interim/dataset.cloudpickle --limit=20000
+      reviews/BX-Book-Ratings.csv" data/interim/dataset.cloudpickle --limit=100000
     deps:
     - path: data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
       hash: md5
@@ -62,16 +62,16 @@ stages:
     outs:
     - path: data/interim/dataset.cloudpickle
       hash: md5
-      md5: eda51ba431e4eb463972c262e5ae8a72
-      size: 6172333
+      md5: 7aa06da89258da52b18812dcf17b509d
+      size: 31456782
   build_features:
     cmd: poetry run python -m src.features data/interim/dataset.cloudpickle data/interim/features.cloudpickle
       --chunk_size=100
     deps:
     - path: data/interim/dataset.cloudpickle
       hash: md5
-      md5: eda51ba431e4eb463972c262e5ae8a72
-      size: 6172333
+      md5: 7aa06da89258da52b18812dcf17b509d
+      size: 31456782
     - path: src/features.py
       hash: md5
       md5: 0a2562bfef20cff17995a9107041cd1a
@@ -79,5 +79,5 @@ stages:
     outs:
     - path: data/interim/features.cloudpickle
       hash: md5
-      md5: 6c763ec3996f165e1375907c28ff819b
-      size: 8906552
+      md5: f6f91e0fa3f6552ad95c9b061bbf3037
+      size: 212269730
