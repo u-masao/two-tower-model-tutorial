@@ -1,6 +1,9 @@
+from typing import List, NoneType, Tuple
+
 import click
 import cloudpickle
 import mlflow
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -13,28 +16,32 @@ from src.modeling.model import TwoTowerModel
 
 
 class TripletDataset(Dataset):
-    def __init__(self, user_embeds, item_embeds, ratings, rating_threshold=5):
-        self.user_embeds = user_embeds
-        self.item_embeds = item_embeds
-        self.ratings = ratings
-        self.rating_threshold = rating_threshold
+    def __init__(
+        self,
+        user_embeds: pd.DataFrame,
+        item_embeds: pd.DataFrame,
+        ratings: pd.DataFrame,
+        rating_threshold: int = 5,
+    ) -> NoneType:
+        self.user_embeds: pd.DataFrame = user_embeds
+        self.item_embeds: pd.DataFrame = item_embeds
+        self.ratings: pd.DataFrame = ratings
+        self.rating_threshold: int = rating_threshold
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ratings)
 
-    def __getitem__(self, idx):
-        targets = self.ratings.iloc[idx]
-        users = self.user_embeds.loc[targets["user-id"]].values
-        items = self.item_embeds.loc[targets["isbn"]].values
-        ratings = (targets["book-rating"] > self.rating_threshold).astype(int)
+    def __getitem__(self, idx: int) -> Tuple[List[float], List[float], int]:
+        targets: pd.Series = self.ratings.iloc[idx]
+        users: List[float] = self.user_embeds.loc[targets["user-id"]].values
+        items: List[float] = self.item_embeds.loc[targets["isbn"]].values
+        ratings: int = (targets["book-rating"] > self.rating_threshold).astype(
+            int
+        )
         return users, items, ratings
 
 
 def train(dataloader, num_epochs=3):
-    # モデル、オプティマイザ、損失関数の定義
-    model = TwoTowerModel(user_embed_dim=384, item_embed_dim=384)
-    optimizer = optim.Adam(model.parameters())
-    criterion = nn.CosineEmbeddingLoss()
 
     logger.info(dataloader)
     for u, i, l in dataloader["train"]:
@@ -45,6 +52,11 @@ def train(dataloader, num_epochs=3):
         logger.info(f"{i.shape=}")
         logger.info(f"{l.shape=}")
         break
+
+    # モデル、オプティマイザ、損失関数の定義
+    model = TwoTowerModel(user_embed_dim=384, item_embed_dim=384)
+    optimizer = optim.Adam(model.parameters())
+    criterion = nn.CosineEmbeddingLoss()
 
     # 学習ループ
     for epoch in tqdm(range(num_epochs)):
