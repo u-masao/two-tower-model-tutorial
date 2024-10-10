@@ -10,6 +10,8 @@ flowchart TD
 	node2["download_dataset"]
 	node3["extract_dataset"]
 	node4["pack_dataset"]
+	node5["train"]
+	node1-->node5
 	node2-->node3
 	node3-->node4
 	node4-->node1
@@ -28,7 +30,9 @@ flowchart TD
 	node5["data/raw/Book reviews/Book reviews/BX_Books.csv"]
 	node6["data/raw/Books Data with Category Language and Summary/Preprocessed_data.csv"]
 	node7["data/raw/bookcrossing-dataset.zip"]
+	node8["models/model.pth"]
 	node1-->node2
+	node2-->node8
 	node3-->node1
 	node4-->node1
 	node5-->node1
