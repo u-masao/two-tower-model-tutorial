@@ -6,29 +6,10 @@ import torch.nn as nn
 import torch.optim as optim
 from loguru import logger
 from torch.utils.data import DataLoader, Dataset
+from tqdm import tqdm
 
 from src import config  # noqa: F401
 from src.modeling.model import TwoTowerModel
-
-
-def train(dataloader, num_epochs=100):
-    # モデル、オプティマイザ、損失関数の定義
-    model = TwoTowerModel(user_embed_dim=128, item_embed_dim=64)
-    optimizer = optim.Adam(model.parameters())
-    criterion = nn.CosineEmbeddingLoss()
-
-    # 学習ループ
-    for epoch in range(num_epochs):
-        for user_embeds, item_embeds, labels in dataloader:
-            optimizer.zero_grad()
-            user_repr, item_repr = model(user_embeds, item_embeds)
-            loss = criterion(user_repr, item_repr, labels)
-            loss.backward()
-            optimizer.step()
-
-
-def load_dataset(input_filepath):
-    return cloudpickle.load(open(input_filepath, "rb"))["train"]
 
 
 class TripletDataset(Dataset):
@@ -42,14 +23,47 @@ class TripletDataset(Dataset):
         return len(self.ratings)
 
     def __getitem__(self, idx):
-        targets = self.ratings[idx]
+        targets = self.ratings.iloc[idx]
         users = self.user_embeds.loc[targets["user-id"]].values
         items = self.item_embeds.loc[targets["isbn"]].values
-        ratings = (targets["rating"] > self.threshold).astype(float).values
+        ratings = (targets["book-rating"] > self.rating_threshold).astype(int)
         return users, items, ratings
 
 
+def train(dataloader, num_epochs=3):
+    # モデル、オプティマイザ、損失関数の定義
+    model = TwoTowerModel(user_embed_dim=384, item_embed_dim=384)
+    optimizer = optim.Adam(model.parameters())
+    criterion = nn.CosineEmbeddingLoss()
+
+    logger.info(dataloader)
+    for u, i, l in dataloader:
+        logger.info(f"{u=}")
+        logger.info(f"{i=}")
+        logger.info(f"{l=}")
+        logger.info(f"{u.shape=}")
+        logger.info(f"{i.shape=}")
+        logger.info(f"{l.shape=}")
+        break
+
+    # 学習ループ
+    for epoch in tqdm(range(num_epochs)):
+        for user_embeds, item_embeds, labels in tqdm(dataloader):
+            optimizer.zero_grad()
+            user_repr, item_repr = model(user_embeds, item_embeds)
+            loss = criterion(user_repr, item_repr, labels)
+            loss.backward()
+            optimizer.step()
+
+
+def load_dataset(input_filepath):
+    data = cloudpickle.load(open(input_filepath, "rb"))["train"]
+    dataset = TripletDataset(data["users"], data["items"], data["ratings"])
+    return dataset
+
+
 def make_dataloader(dataset):
+
     return DataLoader(dataset, batch_size=32, shuffle=True)
 
 
