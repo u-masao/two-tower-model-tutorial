@@ -122,13 +122,11 @@ def build_features(dataset: Dict[str, Any], threshold=5, chunk_size=100):
         )
 
         # merge
-        ratings = dataset[category]["ratings"]
-        ratings["rating"] = (ratings["book-rating"] > threshold).astype(int)
-        result[category] = (
-            ratings.merge(users_df, on="user-id", how="inner")
-            .merge(items_df, on="isbn", how="inner")
-            .drop(["isbn", "user-id", "book-rating"], axis=1)
-        )
+        result[category] = {
+            "users": users_df,
+            "items": items_df,
+            "ratings": dataset[category]["ratings"],
+        }
 
     return result
 
