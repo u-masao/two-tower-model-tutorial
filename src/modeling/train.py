@@ -64,7 +64,7 @@ def load_dataset(input_filepath):
     for phase, df in data.items():
         result[phase] = TripletDataset(df["users"], df["items"], df["ratings"])
 
-    return result["train"], result["test"]
+    return result
 
 
 def make_dataloader(dataset, batch_size=32):
