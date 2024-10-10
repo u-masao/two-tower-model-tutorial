@@ -37,7 +37,7 @@ def train(dataloader, num_epochs=3):
     criterion = nn.CosineEmbeddingLoss()
 
     logger.info(dataloader)
-    for u, i, l in dataloader:
+    for u, i, l in dataloader["train"]:
         logger.info(f"{u=}")
         logger.info(f"{i=}")
         logger.info(f"{l=}")
@@ -48,7 +48,7 @@ def train(dataloader, num_epochs=3):
 
     # 学習ループ
     for epoch in tqdm(range(num_epochs)):
-        for user_embeds, item_embeds, labels in tqdm(dataloader):
+        for user_embeds, item_embeds, labels in tqdm(dataloader["train"]):
             optimizer.zero_grad()
             user_repr, item_repr = model(user_embeds, item_embeds)
             loss = criterion(user_repr, item_repr, labels)
@@ -59,14 +59,23 @@ def train(dataloader, num_epochs=3):
 
 
 def load_dataset(input_filepath):
-    data = cloudpickle.load(open(input_filepath, "rb"))["train"]
-    dataset = TripletDataset(data["users"], data["items"], data["ratings"])
-    return dataset
+    data = cloudpickle.load(open(input_filepath, "rb"))
+    result = {}
+    for phase, df in data.items():
+        result[phase] = TripletDataset(df["users"], df["items"], df["ratings"])
+
+    return result["train"], result["test"]
 
 
-def make_dataloader(dataset):
+def make_dataloader(dataset, batch_size=32):
 
-    return DataLoader(dataset, batch_size=32, shuffle=True)
+    result = {}
+    for phase, pt_dataset in dataset.items():
+        result[phase] = DataLoader(
+            pt_dataset, batch_size=batch_size, shuffle=True
+        )
+
+    return result
 
 
 @click.command()
@@ -74,6 +83,7 @@ def make_dataloader(dataset):
 @click.argument("output_filepath", type=click.Path())
 @click.option("--mlflow_run_name", type=str, default="develop")
 @click.option("--num_epochs", type=int, default=1)
+@click.option("--batch_size", type=int, default=32)
 def main(**kwargs):
 
     # init log
@@ -89,7 +99,7 @@ def main(**kwargs):
     dataset = load_dataset(kwargs["input_filepath"])
 
     # make dataloader
-    dataloader = make_dataloader(dataset)
+    dataloader = make_dataloader(dataset, batch_size=kwargs["batch_size"])
 
     # build features
     model = train(dataloader, num_epochs=kwargs["num_epochs"])
