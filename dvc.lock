@@ -83,7 +83,7 @@ stages:
       size: 834300286
   train:
     cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
-      models/model.pth
+      models/model.pth --num_epochs=10 --batch_size=32
     deps:
     - path: data/interim/features.cloudpickle
       hash: md5
@@ -91,10 +91,10 @@ stages:
       size: 834300286
     - path: src/modeling/train.py
       hash: md5
-      md5: ccb6e39d01916437728394e05ca07284
-      size: 3402
+      md5: c6621958ec759722ae0ed8bcf4418b10
+      size: 3722
     outs:
     - path: models/model.pth
       hash: md5
-      md5: bb0b8084424908241e3544153e67ffa9
+      md5: 201c0bf51c4c3b334df107dd9e92f063
       size: 216552
