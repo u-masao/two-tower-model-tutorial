@@ -91,10 +91,10 @@ stages:
       size: 834300286
     - path: src/modeling/train.py
       hash: md5
-      md5: 1e311acb14aa4d1edecffa79a9dcd100
-      size: 3021
+      md5: afff56d966e0c7cf8eb6ba81ef63ca3c
+      size: 3111
     outs:
     - path: models/model.pth
       hash: md5
-      md5: a70736d94dbd5704562b1221aa26d44b
-      size: 217576
+      md5: 396d46e0e962ed3ae988aa557c4c450c
+      size: 216552
