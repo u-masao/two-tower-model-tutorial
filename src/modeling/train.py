@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from pathlib import Path
 
 import click
 import mlflow
@@ -14,7 +15,15 @@ from src.modeling.data_loader import make_dataloader
 from src.modeling.model import TwoTowerModel
 
 
-def train(dataloader, num_epochs=3, log_interval=100):
+def train(
+    dataloader,
+    output_model_dir,
+    num_epochs=3,
+    log_interval=500,
+    model_save_interval_epochs=10,
+):
+    output_model_dir = Path(output_model_dir)
+    output_model_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(dataloader)
     for u, i, l in dataloader["train"]:
@@ -45,7 +54,18 @@ def train(dataloader, num_epochs=3, log_interval=100):
                 loss.backward()
                 optimizer.step()
                 if batch_idx % log_interval == 0:
+                    pbar.set_description(f"epoch={epoch}")
                     pbar.set_postfix(OrderedDict(loss=loss.item()))
+                    metrics = {"loss": loss.item()}
+                    step = len(pbar) * epoch + batch_idx
+                    mlflow.log_metrics(metrics, step=step)
+
+                break
+        if epoch % model_save_interval_epochs == 0:
+            torch.save(
+                model.state_dict(),
+                output_model_dir / f"model_epoch{epoch:04}.pth",
+            )
 
     return model
 
@@ -53,6 +73,7 @@ def train(dataloader, num_epochs=3, log_interval=100):
 @click.command()
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
+@click.option("--output_model_dir", type=click.Path(), default="models/log/")
 @click.option("--mlflow_run_name", type=str, default="develop")
 @click.option("--num_epochs", type=int, default=1)
 @click.option("--batch_size", type=int, default=32)
@@ -76,7 +97,11 @@ def main(**kwargs):
     )
 
     # build features
-    model = train(dataloader, num_epochs=kwargs["num_epochs"])
+    model = train(
+        dataloader,
+        num_epochs=kwargs["num_epochs"],
+        output_model_dir=kwargs["output_model_dir"],
+    )
 
     # output file
     torch.save(model.state_dict(), kwargs["output_filepath"])
