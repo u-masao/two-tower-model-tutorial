@@ -172,3 +172,4 @@ cython_debug/
 #.idea/
 /mlruns/
 /.object_cache/
+/reports/figures/
