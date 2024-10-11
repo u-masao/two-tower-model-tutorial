@@ -17,15 +17,18 @@ def predict(model, dataloader):
     for user_embeds, item_embeds, labels in tqdm(dataloader["test"]):
         user_repr, item_repr = model(user_embeds, item_embeds)
         cosine = F.cosine_similarity(user_repr, item_repr, dim=1, eps=1e-8)
-        predict = (cosine > 0.5).to(int)
-        logger.info(predict == labels)
-        result.append(predict)
+        # predict = (cosine > 0.5).to(int)
+        result.append(cosine)
     return torch.cat(result)
 
 
-def load_model(model_filepath, user_embed_dim=384, item_embed_dim=384):
+def load_model(
+    model_filepath, user_embed_dim=384, item_embed_dim=384, hidden_dim=384
+):
     model = TwoTowerModel(
-        user_embed_dim=user_embed_dim, item_embed_dim=item_embed_dim
+        user_embed_dim=user_embed_dim,
+        item_embed_dim=item_embed_dim,
+        hidden_dim=hidden_dim,
     )
     model.load_state_dict(torch.load(model_filepath, weights_only=True))
     model.eval()
@@ -64,6 +67,7 @@ def main(**kwargs):
     pd.DataFrame(predicted.tolist()).to_parquet(kwargs["output_filepath"])
 
     # logging
+    logger.info(predicted.tolist())
 
     # cleanup
     mlflow.end_run()
