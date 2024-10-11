@@ -14,7 +14,7 @@ from src.modeling.data_loader import make_dataloader
 from src.modeling.model import TwoTowerModel
 
 
-def train(dataloader, num_epochs=3):
+def train(dataloader, num_epochs=3, log_interval=100):
 
     logger.info(dataloader)
     for u, i, l in dataloader["train"]:
@@ -28,7 +28,7 @@ def train(dataloader, num_epochs=3):
 
     # モデル、オプティマイザ、損失関数の定義
     model = TwoTowerModel(
-        user_embed_dim=384, item_embed_dim=384, hidden_dim=384
+        user_embed_dim=384, item_embed_dim=384, hidden_dim=384, output_dim=384
     )
     optimizer = optim.Adam(model.parameters())
     criterion = nn.CosineEmbeddingLoss()
@@ -36,13 +36,16 @@ def train(dataloader, num_epochs=3):
     # 学習ループ
     for epoch in range(num_epochs):
         with tqdm(dataloader["train"]) as pbar:
-            for user_embeds, item_embeds, labels in pbar:
+            for batch_idx, (user_embeds, item_embeds, labels) in enumerate(
+                pbar
+            ):
                 optimizer.zero_grad()
                 user_repr, item_repr = model(user_embeds, item_embeds)
                 loss = criterion(user_repr, item_repr, labels)
-                pbar.set_postfix(OrderedDict(loss=loss.item()))
                 loss.backward()
                 optimizer.step()
+                if batch_idx % log_interval == 0:
+                    pbar.set_postfix(OrderedDict(loss=loss.item()))
 
     return model
 
