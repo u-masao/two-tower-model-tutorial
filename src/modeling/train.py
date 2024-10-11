@@ -60,7 +60,6 @@ def train(
                     step = len(pbar) * epoch + batch_idx
                     mlflow.log_metrics(metrics, step=step)
 
-                break
         if epoch % model_save_interval_epochs == 0:
             torch.save(
                 model.state_dict(),
@@ -73,7 +72,7 @@ def train(
 @click.command()
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
-@click.option("--output_model_dir", type=click.Path(), default="models/log/")
+@click.option("--output_model_dir", type=click.Path(), default="models/logs/")
 @click.option("--mlflow_run_name", type=str, default="develop")
 @click.option("--num_epochs", type=int, default=1)
 @click.option("--batch_size", type=int, default=32)
