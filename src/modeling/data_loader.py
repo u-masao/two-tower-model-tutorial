@@ -27,9 +27,13 @@ class TripletDataset(Dataset):
         targets: pd.Series = self.ratings.iloc[idx]
         users: List[float] = self.user_embeds.loc[targets["user-id"]].values
         items: List[float] = self.item_embeds.loc[targets["isbn"]].values
-        ratings: int = (targets["book-rating"] > self.rating_threshold).astype(
-            int
-        )
+        ratings: int = (
+            (
+                (targets["book-rating"] > self.rating_threshold).astype(float)
+                - 0.5
+            )
+            * 2
+        ).astype(int)
         return users, items, ratings
 
 
