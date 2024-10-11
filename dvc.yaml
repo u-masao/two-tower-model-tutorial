@@ -56,6 +56,8 @@ stages:
       --num_epochs=${num_epochs}
       --batch_size=${batch_size}
     deps:
+    - src/modeling/model.py
+    - src/modeling/data_loader.py
     - src/modeling/train.py
     - data/interim/features.cloudpickle
     outs:
@@ -68,6 +70,8 @@ stages:
       models/model.pth
       data/processed/predicted.parquet
     deps:
+    - src/modeling/model.py
+    - src/modeling/data_loader.py
     - src/modeling/predict.py
     - data/interim/features.cloudpickle
     - models/model.pth
