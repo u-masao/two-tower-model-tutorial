@@ -1,44 +1,14 @@
-from typing import List, Tuple
-
 import click
-import cloudpickle
 import mlflow
-import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from loguru import logger
-from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
 from src import config  # noqa: F401
+from src.modeling.data_loader import make_dataloader
 from src.modeling.model import TwoTowerModel
-
-
-class TripletDataset(Dataset):
-    def __init__(
-        self,
-        user_embeds: pd.DataFrame,
-        item_embeds: pd.DataFrame,
-        ratings: pd.DataFrame,
-        rating_threshold: int = 5,
-    ) -> None:
-        self.user_embeds: pd.DataFrame = user_embeds
-        self.item_embeds: pd.DataFrame = item_embeds
-        self.ratings: pd.DataFrame = ratings
-        self.rating_threshold: int = rating_threshold
-
-    def __len__(self) -> int:
-        return len(self.ratings)
-
-    def __getitem__(self, idx: int) -> Tuple[List[float], List[float], int]:
-        targets: pd.Series = self.ratings.iloc[idx]
-        users: List[float] = self.user_embeds.loc[targets["user-id"]].values
-        items: List[float] = self.item_embeds.loc[targets["isbn"]].values
-        ratings: int = (targets["book-rating"] > self.rating_threshold).astype(
-            int
-        )
-        return users, items, ratings
 
 
 def train(dataloader, num_epochs=3):
@@ -70,26 +40,6 @@ def train(dataloader, num_epochs=3):
     return model
 
 
-def load_dataset(input_filepath):
-    data = cloudpickle.load(open(input_filepath, "rb"))
-    result = {}
-    for phase, df in data.items():
-        result[phase] = TripletDataset(df["users"], df["items"], df["ratings"])
-
-    return result
-
-
-def make_dataloader(dataset, batch_size=32):
-
-    result = {}
-    for phase, pt_dataset in dataset.items():
-        result[phase] = DataLoader(
-            pt_dataset, batch_size=batch_size, shuffle=True
-        )
-
-    return result
-
-
 @click.command()
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
@@ -107,11 +57,10 @@ def main(**kwargs):
     logger.info(f"cli args: {kwargs}")
     mlflow.log_params({f"args.{k}": v for k, v in kwargs.items()})
 
-    # load dataset
-    dataset = load_dataset(kwargs["input_filepath"])
-
     # make dataloader
-    dataloader = make_dataloader(dataset, batch_size=kwargs["batch_size"])
+    dataloader = make_dataloader(
+        kwargs["input_filepath"], batch_size=kwargs["batch_size"]
+    )
 
     # build features
     model = train(dataloader, num_epochs=kwargs["num_epochs"])
