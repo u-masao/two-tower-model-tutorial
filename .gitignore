@@ -173,3 +173,4 @@ cython_debug/
 /mlruns/
 /.object_cache/
 /reports/figures/
+/models/log/
