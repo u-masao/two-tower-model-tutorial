@@ -98,3 +98,24 @@ stages:
       hash: md5
       md5: 201c0bf51c4c3b334df107dd9e92f063
       size: 216552
+  predict:
+    cmd: poetry run python -m src.modeling.predict data/interim/features.cloudpickle
+      models/model.pth data/processed/predicted.parquet
+    deps:
+    - path: data/interim/features.cloudpickle
+      hash: md5
+      md5: f2d0911ba9d9a19a6d8476f58d29f9e3
+      size: 834300286
+    - path: models/model.pth
+      hash: md5
+      md5: 201c0bf51c4c3b334df107dd9e92f063
+      size: 216552
+    - path: src/modeling/predict.py
+      hash: md5
+      md5: 34063bb783eb9fbeee60e606c9d220a0
+      size: 2488
+    outs:
+    - path: data/processed/predicted.parquet
+      hash: md5
+      md5: 9caf3d264e99389961d74f2063dcc7d2
+      size: 1618
