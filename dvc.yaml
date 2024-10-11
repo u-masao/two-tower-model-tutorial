@@ -60,3 +60,16 @@ stages:
     - data/interim/features.cloudpickle
     outs:
     - models/model.pth
+
+  predict:
+    cmd: >-
+      poetry run python -m src.modeling.predict
+      data/interim/features.cloudpickle
+      models/model.pth
+      data/processed/predicted.parquet
+    deps:
+    - src/modeling/predict.py
+    - data/interim/features.cloudpickle
+    - models/model.pth
+    outs:
+    - data/processed/predicted.parquet

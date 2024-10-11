@@ -1,4 +1,4 @@
-dataset_limit: 0
+dataset_limit: 3000
 embedding_chunk_size: 100
-num_epochs: 10
+num_epochs: 1
 batch_size: 32
