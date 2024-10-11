@@ -1,7 +1,11 @@
+from collections import OrderedDict
+
 import click
 import mlflow
+import mlflow.pytorch
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from loguru import logger
 from tqdm import tqdm
@@ -24,18 +28,25 @@ def train(dataloader, num_epochs=3):
         break
 
     # モデル、オプティマイザ、損失関数の定義
-    model = TwoTowerModel(user_embed_dim=384, item_embed_dim=384)
+    model = TwoTowerModel(
+        user_embed_dim=384, item_embed_dim=384, hidden_dim=384
+    )
     optimizer = optim.Adam(model.parameters())
     criterion = nn.CosineEmbeddingLoss()
 
     # 学習ループ
-    for epoch in tqdm(range(num_epochs)):
-        for user_embeds, item_embeds, labels in tqdm(dataloader["train"]):
-            optimizer.zero_grad()
-            user_repr, item_repr = model(user_embeds, item_embeds)
-            loss = criterion(user_repr, item_repr, labels)
-            loss.backward()
-            optimizer.step()
+    for epoch in range(num_epochs):
+        with tqdm(dataloader["train"]) as pbar:
+            for user_embeds, item_embeds, labels in pbar:
+                optimizer.zero_grad()
+                user_repr, item_repr = model(user_embeds, item_embeds)
+                logger.info(f"{F.cosine_similarity(user_repr, item_repr)=}")
+                logger.info(f"{labels=}")
+                loss = criterion(user_repr, item_repr, labels)
+                logger.info(f"{loss=}")
+                pbar.set_postfix(OrderedDict(loss=loss.item()))
+                loss.backward()
+                optimizer.step()
 
     return model
 
@@ -50,12 +61,15 @@ def main(**kwargs):
 
     # init log
     logger.info("==== start process ====")
-    mlflow.set_experiment("build features")
+    mlflow.set_experiment("train")
     mlflow.start_run(run_name=kwargs["mlflow_run_name"])
 
     # log cli args
     logger.info(f"cli args: {kwargs}")
     mlflow.log_params({f"args.{k}": v for k, v in kwargs.items()})
+
+    # autolog
+    mlflow.pytorch.autolog()
 
     # make dataloader
     dataloader = make_dataloader(
