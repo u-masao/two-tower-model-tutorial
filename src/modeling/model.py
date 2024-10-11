@@ -7,12 +7,12 @@ class TwoTowerModel(nn.Module):
         self.user_tower = nn.Sequential(
             nn.Linear(user_embed_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.Linear(hidden_dim, hidden_dim),
         )
         self.item_tower = nn.Sequential(
             nn.Linear(item_embed_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.Linear(hidden_dim, hidden_dim),
         )
 
     def forward(self, user_embed, item_embed):
