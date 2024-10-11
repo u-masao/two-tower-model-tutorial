@@ -5,7 +5,6 @@ import mlflow
 import mlflow.pytorch
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from loguru import logger
 from tqdm import tqdm
@@ -40,10 +39,7 @@ def train(dataloader, num_epochs=3):
             for user_embeds, item_embeds, labels in pbar:
                 optimizer.zero_grad()
                 user_repr, item_repr = model(user_embeds, item_embeds)
-                logger.info(f"{F.cosine_similarity(user_repr, item_repr)=}")
-                logger.info(f"{labels=}")
                 loss = criterion(user_repr, item_repr, labels)
-                logger.info(f"{loss=}")
                 pbar.set_postfix(OrderedDict(loss=loss.item()))
                 loss.backward()
                 optimizer.step()
