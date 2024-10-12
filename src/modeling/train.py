@@ -17,6 +17,82 @@ from src.modeling.data_loader import make_dataloader
 from src.modeling.model import TwoTowerModel
 
 
+def train_epoch(
+    model: TwoTowerModel,
+    dataloader: DataLoader,
+    optimizer: optim.Optimizer,
+    criterion: nn.CosineEmbeddingLoss,
+    epoch: int,
+    log_interval: int = 100,
+):
+    model.train()
+    with tqdm(dataloader["train"]) as pbar:
+        for batch_idx, (user_embeds, item_embeds, labels) in enumerate(pbar):
+            optimizer.zero_grad()
+            user_repr, item_repr = model(user_embeds, item_embeds)
+            train_batch_loss = criterion(user_repr, item_repr, labels)
+            train_batch_loss.backward()
+            optimizer.step()
+            if batch_idx % log_interval == 0:
+                pbar.set_description(f"train epoch={epoch}")
+                pbar.set_postfix(
+                    OrderedDict(train_batch_loss=train_batch_loss.item())
+                )
+                metrics = {"train.batch.loss": train_batch_loss.item()}
+                step = len(pbar) * epoch + batch_idx
+                mlflow.log_metrics(metrics, step=step)
+
+
+def test_epoch(
+    model: TwoTowerModel,
+    dataloader: DataLoader,
+    optimizer: optim.Optimizer,
+    criterion: nn.CosineEmbeddingLoss,
+    epoch: int,
+    log_interval: int = 100,
+    proba_threshold: float = 0.5,
+):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    with torch.no_grad():
+        with tqdm(dataloader["test"]) as pbar:
+            for batch_idx, (user_embeds, item_embeds, labels) in enumerate(
+                pbar
+            ):
+                user_repr, item_repr = model(user_embeds, item_embeds)
+                test_batch_loss = criterion(user_repr, item_repr, labels)
+                test_loss += test_batch_loss.item()
+                cosine = F.cosine_similarity(
+                    user_repr, item_repr, dim=1, eps=1e-8
+                )
+                correct += (
+                    (cosine > proba_threshold).eq(labels == 1).sum().item()
+                )
+                if batch_idx % log_interval == 0:
+                    pbar.set_description(f"test epoch={epoch}")
+                    pbar.set_postfix(
+                        OrderedDict(test_batch_loss=test_batch_loss.item())
+                    )
+                    metrics = {"test.batch.loss": test_batch_loss.item()}
+                    step = len(pbar) * epoch + batch_idx
+                    mlflow.log_metrics(metrics, step=step)
+
+    test_data_size = len(dataloader["test"].dataset)
+    test_loss /= test_data_size
+    test_metrics = {
+        "test.loss": test_loss,
+        "test.data_size": test_data_size,
+        "test.correct": correct,
+        "test.accuracy": correct / test_data_size,
+    }
+    logger.info(f"{test_metrics=}")
+    mlflow.log_metrics(
+        test_metrics,
+        step=epoch,
+    )
+
+
 def train(
     dataloader: DataLoader,
     output_model_dir: str,
@@ -24,6 +100,7 @@ def train(
     log_interval: int = 500,
     model_save_interval_epochs: int = 10,
     proba_threshold: float = 0.5,
+    loss_margin: float = 0.5,
 ):
 
     # make output dir
@@ -35,27 +112,19 @@ def train(
         user_embed_dim=384, item_embed_dim=384, hidden_dim=384, output_dim=384
     )
     optimizer = optim.Adam(model.parameters())
-    criterion = nn.CosineEmbeddingLoss()
+    criterion = nn.CosineEmbeddingLoss(margin=loss_margin)
 
     # train evaluate loop
     for epoch in range(num_epochs):
         # train
-        model.train()
-        with tqdm(dataloader["train"]) as pbar:
-            for batch_idx, (user_embeds, item_embeds, labels) in enumerate(
-                pbar
-            ):
-                optimizer.zero_grad()
-                user_repr, item_repr = model(user_embeds, item_embeds)
-                train_loss = criterion(user_repr, item_repr, labels)
-                train_loss.backward()
-                optimizer.step()
-                if batch_idx % log_interval == 0:
-                    pbar.set_description(f"epoch={epoch}")
-                    pbar.set_postfix(OrderedDict(train_loss=train_loss.item()))
-                    metrics = {"train.loss": train_loss.item()}
-                    step = len(pbar) * epoch + batch_idx
-                    mlflow.log_metrics(metrics, step=step)
+        train_epoch(
+            model,
+            dataloader,
+            optimizer,
+            criterion,
+            epoch,
+            log_interval=log_interval,
+        )
 
         if epoch % model_save_interval_epochs == 0:
             torch.save(
@@ -64,36 +133,14 @@ def train(
             )
 
         # evaluate
-        model.eval()
-        test_loss = 0
-        correct = 0
-        with torch.no_grad():
-            with tqdm(dataloader["test"]) as pbar:
-                for batch_idx, (user_embeds, item_embeds, labels) in enumerate(
-                    pbar
-                ):
-                    user_repr, item_repr = model(user_embeds, item_embeds)
-                    test_loss += criterion(user_repr, item_repr, labels)
-                    cosine = F.cosine_similarity(
-                        user_repr, item_repr, dim=1, eps=1e-8
-                    )
-                    pred = (
-                        ((cosine > proba_threshold).to(float) - 0.5) * 2
-                    ).to(int)
-                    correct += pred.eq(labels).sum().item()
-
-        test_data_size = len(dataloader["test"].dataset)
-        test_loss /= test_data_size
-        test_metrics = {
-            "test.loss": test_loss,
-            "test.data_size": test_data_size,
-            "test.correct": correct,
-            "test.accuracy": correct / test_data_size,
-        }
-        logger.info(f"{test_metrics=}")
-        mlflow.log_metrics(
-            test_metrics,
-            step=epoch,
+        test_epoch(
+            model,
+            dataloader,
+            optimizer,
+            criterion,
+            epoch,
+            log_interval=log_interval,
+            proba_threshold=proba_threshold,
         )
 
     return model
@@ -106,6 +153,7 @@ def train(
 @click.option("--mlflow_run_name", type=str, default="develop")
 @click.option("--num_epochs", type=int, default=1)
 @click.option("--batch_size", type=int, default=32)
+@click.option("--loss_margin", type=float, default=0.5)
 def main(**kwargs):
 
     # init log
@@ -127,6 +175,7 @@ def main(**kwargs):
         dataloader,
         num_epochs=kwargs["num_epochs"],
         output_model_dir=kwargs["output_model_dir"],
+        loss_margin=kwargs["loss_margin"],
     )
 
     # output file
