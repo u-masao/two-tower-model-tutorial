@@ -73,7 +73,7 @@ stages:
         poetry run python -m src.modeling.predict
         data/interim/features.cloudpickle
         models/model_${key}.pth
-        data/processed/predicted.parquet
+        data/processed/predicted_${key}.parquet
         --device ${compute_device}
         --hidden_dim ${item.hidden_dim}
         --output_dim ${item.output_dim}
