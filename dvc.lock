@@ -137,14 +137,14 @@ stages:
       size: 354645
   train@benchmark:
     cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
-      models/model_benchmark.pth --num_epochs 10 --batch_size 64 --model_save_interval_epochs
-      1 --proba_threshold 0.5 --log_interval 100 --loss_margin 0.0 --hidden_dim 384
-      --output_dim 384 --lr 0.001
+      models/model_benchmark.pth --device=cuda --num_epochs 10 --batch_size 64 --model_save_interval_epochs
+      1 --proba_threshold 0.5 --dropout_p 0.5 --log_interval 100 --loss_margin 0.0
+      --hidden_dim 384 --output_dim 384 --lr 0.001
     deps:
     - path: data/interim/features.cloudpickle
       hash: md5
-      md5: f2d0911ba9d9a19a6d8476f58d29f9e3
-      size: 834300286
+      md5: 64cd57f894f4144df3b6dd6a7403add7
+      size: 14954411
     - path: src/modeling/data_loader.py
       hash: md5
       md5: 6f27fb16cae0232f9524efd0a62e96d2
@@ -155,10 +155,64 @@ stages:
       size: 856
     - path: src/modeling/train.py
       hash: md5
-      md5: 15e227c2257bf862a46f9f89746cc9ed
-      size: 9131
+      md5: b8503ae80d728ef321beddf8dfdf48e4
+      size: 10023
     outs:
     - path: models/model_benchmark.pth
       hash: md5
-      md5: c7ad8997440a85ce7d6fdef779ffca52
-      size: 2368928
+      md5: 55a9f7f7366f18d166dbf3c5c83821c9
+      size: 2369056
+  train@setup_1:
+    cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
+      models/model_setup_1.pth --device=cuda --num_epochs 10 --batch_size 64 --model_save_interval_epochs
+      5 --proba_threshold 0.5 --dropout_p 0.5 --log_interval 500 --loss_margin 0.0
+      --hidden_dim 128 --output_dim 64 --lr 0.0005
+    deps:
+    - path: data/interim/features.cloudpickle
+      hash: md5
+      md5: 64cd57f894f4144df3b6dd6a7403add7
+      size: 14954411
+    - path: src/modeling/data_loader.py
+      hash: md5
+      md5: 6f27fb16cae0232f9524efd0a62e96d2
+      size: 1530
+    - path: src/modeling/model.py
+      hash: md5
+      md5: c39880347aa0964b274eefc5913d0c33
+      size: 856
+    - path: src/modeling/train.py
+      hash: md5
+      md5: b8503ae80d728ef321beddf8dfdf48e4
+      size: 10023
+    outs:
+    - path: models/model_setup_1.pth
+      hash: md5
+      md5: 90d725ebb1314017e9f31242d61c0c4b
+      size: 463816
+  train@setup_2:
+    cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
+      models/model_setup_2.pth --device=cuda --num_epochs 10 --batch_size 64 --model_save_interval_epochs
+      5 --proba_threshold 0.5 --dropout_p 0.5 --log_interval 500 --loss_margin 0.0
+      --hidden_dim 128 --output_dim 64 --lr 0.001
+    deps:
+    - path: data/interim/features.cloudpickle
+      hash: md5
+      md5: 64cd57f894f4144df3b6dd6a7403add7
+      size: 14954411
+    - path: src/modeling/data_loader.py
+      hash: md5
+      md5: 6f27fb16cae0232f9524efd0a62e96d2
+      size: 1530
+    - path: src/modeling/model.py
+      hash: md5
+      md5: c39880347aa0964b274eefc5913d0c33
+      size: 856
+    - path: src/modeling/train.py
+      hash: md5
+      md5: b8503ae80d728ef321beddf8dfdf48e4
+      size: 10023
+    outs:
+    - path: models/model_setup_2.pth
+      hash: md5
+      md5: 7a786d616bb4f9cf97094819f17f9d80
+      size: 463816
