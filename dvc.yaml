@@ -49,19 +49,20 @@ stages:
     - data/interim/features.cloudpickle
 
   train:
-    cmd: >-
-      poetry run python -m src.modeling.train
-      data/interim/features.cloudpickle
-      models/model.pth
-      --num_epochs=${num_epochs}
-      --batch_size=${batch_size}
-    deps:
-    - src/modeling/model.py
-    - src/modeling/data_loader.py
-    - src/modeling/train.py
-    - data/interim/features.cloudpickle
-    outs:
-    - models/model.pth
+    foreach: ${train_params}
+    do:
+      cmd: >-
+        poetry run python -m src.modeling.train
+        data/interim/features.cloudpickle
+        models/model.pth
+        ${item}
+      deps:
+      - src/modeling/model.py
+      - src/modeling/data_loader.py
+      - src/modeling/train.py
+      - data/interim/features.cloudpickle
+      outs:
+      - models/model.pth
 
   predict:
     cmd: >-

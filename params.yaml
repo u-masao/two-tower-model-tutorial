@@ -1,6 +1,14 @@
 dataset_limit: 0
 # dataset_limit: 5000
 embedding_chunk_size: 100
-# num_epochs: 500
-num_epochs: 300
-batch_size: 64
+train_params:
+  benchmark:
+    num_epochs: 10
+    batch_size: 64
+    model_save_interval_epochs: 1
+    proba_threshold: 0.5
+    log_interval: 100
+    loss_margin: 0.0
+    hidden_dim: 384
+    output_dim: 384
+    lr: 0.001
