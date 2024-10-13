@@ -74,7 +74,7 @@ stages:
         data/processed/predicted.parquet
         --hidden_dim ${item.hidden_dim}
         --output_dim ${item.output_dim}
-        --dropout ${item.dropout}
+        --dropout_p ${item.dropout_p}
       deps:
       - src/modeling/model.py
       - src/modeling/data_loader.py
