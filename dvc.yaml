@@ -54,7 +54,7 @@ stages:
       cmd: >-
         poetry run python -m src.modeling.train
         data/interim/features.cloudpickle
-        models/model.pth
+        models/model_${key}.pth
         ${item}
       deps:
       - src/modeling/model.py
@@ -62,19 +62,21 @@ stages:
       - src/modeling/train.py
       - data/interim/features.cloudpickle
       outs:
-      - models/model.pth
+      - models/model_${key}.pth
 
   predict:
-    cmd: >-
-      poetry run python -m src.modeling.predict
-      data/interim/features.cloudpickle
-      models/model.pth
-      data/processed/predicted.parquet
-    deps:
-    - src/modeling/model.py
-    - src/modeling/data_loader.py
-    - src/modeling/predict.py
-    - data/interim/features.cloudpickle
-    - models/model.pth
-    outs:
-    - data/processed/predicted.parquet
+    foreach: ${train_params}
+    do:
+      cmd: >-
+        poetry run python -m src.modeling.predict
+        data/interim/features.cloudpickle
+        models/model_${key}.pth
+        data/processed/predicted.parquet
+      deps:
+      - src/modeling/model.py
+      - src/modeling/data_loader.py
+      - src/modeling/predict.py
+      - data/interim/features.cloudpickle
+      - models/model_${key}.pth
+      outs:
+      - data/processed/predicted_${key}.parquet
