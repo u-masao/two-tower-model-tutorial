@@ -1,3 +1,5 @@
+from typing import Optional
+
 import click
 import mlflow
 import pandas as pd
@@ -31,13 +33,38 @@ def load_model(
     return model
 
 
-def predict(model, dataloader):
+def predict(model, dataloader, device: Optional[str] = None):
+
+    # compute devcie
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"{device=}")
+    mlflow.log_param("device", device)
+
+    # transfar to device
+    model.to(device)
+
+    # init var
     result = []
+
     model.eval()
     for user_embeds, item_embeds, labels in tqdm(dataloader["test"]):
+
+        # transfar to device
+        user_embeds = user_embeds.to(device)
+        item_embeds = item_embeds.to(device)
+        labels = labels.to(device)
+
+        # calc representation
         user_repr, item_repr = model(user_embeds, item_embeds)
+
+        # cosine
         cosine = F.cosine_similarity(user_repr, item_repr, dim=1, eps=1e-8)
+
+        # make result
         result.append(torch.vstack([cosine, labels]).T)
+
+    # concat
     result_df = pd.DataFrame(torch.cat(result).tolist())
     result_df.columns = ["proba", "label"]
     return result_df
@@ -55,6 +82,7 @@ def predict(model, dataloader):
 @click.option("--dropout_p", type=float, default=0.5)
 @click.option("--hidden_dim", type=int, default=384)
 @click.option("--output_dim", type=int, default=384)
+@click.option("--device", type=str, default=None)
 def main(**kwargs):
 
     # init log
@@ -69,7 +97,7 @@ def main(**kwargs):
     # load model
     model = load_model(
         kwargs["input_model_filepath"],
-        hiddin_dim=kwargs["hidden_dim"],
+        hidden_dim=kwargs["hidden_dim"],
         output_dim=kwargs["output_dim"],
         dropout_p=kwargs["dropout_p"],
     )
@@ -80,7 +108,7 @@ def main(**kwargs):
     )
 
     # build features
-    predicted_df = predict(model, dataloader)
+    predicted_df = predict(model, dataloader, device=kwargs["device"])
 
     # output file
     predicted_df.to_parquet(kwargs["output_filepath"])

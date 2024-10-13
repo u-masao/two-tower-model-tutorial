@@ -215,6 +215,7 @@ def train(
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"{device=}")
+    mlflow.log_param("device", device)
 
     # モデル、オプティマイザ、損失関数の定義
     model = TwoTowerModel(
