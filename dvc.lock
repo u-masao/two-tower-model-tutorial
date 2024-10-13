@@ -41,7 +41,7 @@ stages:
   pack_dataset:
     cmd: poetry run python -m src.dataset "data/raw/Book reviews/Book reviews/BX-Users.csv"
       "data/raw/Book reviews/Book reviews/BX_Books.csv" "data/raw/Book reviews/Book
-      reviews/BX-Book-Ratings.csv" data/interim/dataset.cloudpickle --limit=5000
+      reviews/BX-Book-Ratings.csv" data/interim/dataset.cloudpickle --limit=0
     deps:
     - path: data/raw/Book reviews/Book reviews/BX-Book-Ratings.csv
       hash: md5
@@ -62,16 +62,16 @@ stages:
     outs:
     - path: data/interim/dataset.cloudpickle
       hash: md5
-      md5: 125c8f61f58881b4488251481965b80f
-      size: 1573595
+      md5: 5173458e8cd9fca873ca7fb5d30d07e6
+      size: 93850967
   build_features:
     cmd: poetry run python -m src.features data/interim/dataset.cloudpickle data/interim/features.cloudpickle
       --chunk_size=200 --device=cuda
     deps:
     - path: data/interim/dataset.cloudpickle
       hash: md5
-      md5: 125c8f61f58881b4488251481965b80f
-      size: 1573595
+      md5: 5173458e8cd9fca873ca7fb5d30d07e6
+      size: 93850967
     - path: src/features.py
       hash: md5
       md5: 806d18033fd9db1ae5b008ca64fe761a
@@ -79,8 +79,8 @@ stages:
     outs:
     - path: data/interim/features.cloudpickle
       hash: md5
-      md5: 64cd57f894f4144df3b6dd6a7403add7
-      size: 14954411
+      md5: 015f1f3c1d4a8d8ab1aa4a8fac3dfe08
+      size: 834300286
   train:
     cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
       models/model.pth --num_epochs=5 --batch_size=64
@@ -143,8 +143,8 @@ stages:
     deps:
     - path: data/interim/features.cloudpickle
       hash: md5
-      md5: 64cd57f894f4144df3b6dd6a7403add7
-      size: 14954411
+      md5: 015f1f3c1d4a8d8ab1aa4a8fac3dfe08
+      size: 834300286
     - path: src/modeling/data_loader.py
       hash: md5
       md5: 6f27fb16cae0232f9524efd0a62e96d2
@@ -160,7 +160,7 @@ stages:
     outs:
     - path: models/model_benchmark.pth
       hash: md5
-      md5: 9d646139dc6bfb09d376be3ef12758b1
+      md5: e17ad525fbc5f0d32d97db909c42d854
       size: 2369056
   train@setup_1:
     cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
