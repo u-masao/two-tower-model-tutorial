@@ -1,5 +1,5 @@
-# dataset_limit: 0
-dataset_limit: 5000
+dataset_limit: 0
+# dataset_limit: 5000
 embedding_chunk_size: 200
 # compute_device: cpu
 compute_device: cuda
