@@ -174,3 +174,4 @@ cython_debug/
 /.object_cache/
 /reports/figures/
 /models/logs/
+/models/
