@@ -11,7 +11,7 @@ flowchart TD
 	node3["extract_dataset"]
 	node4["pack_dataset"]
 	node5["predict"]
-	node6["train"]
+	node6["train@benchmark"]
 	node1-->node5
 	node1-->node6
 	node2-->node3
