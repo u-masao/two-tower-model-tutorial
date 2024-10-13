@@ -61,9 +61,13 @@ lint:
 format:
 	black --config pyproject.toml src
 
+sync_to_storage:
+	rsync -rq ./mlruns/ /content/drive/MyDrive/dataset/two-tower-model-tutorial/mlruns/
+	poetry run dvc push
 
-
-
+sync_from_storage:
+	rsync -rq /content/drive/MyDrive/dataset/two-tower-model-tutorial/mlruns/ ./mlruns/ 
+	poetry run dvc pull
 
 
 #################################################################################
