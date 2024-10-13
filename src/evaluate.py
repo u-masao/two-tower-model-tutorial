@@ -177,13 +177,8 @@ def analysis(predicted_df, output_dir, prob_threshold=0.0001):
 
 @click.command()
 @click.argument("input_filepath", type=click.Path(exists=True))
-@click.argument("input_model_filepath", type=click.Path(exists=True))
-@click.argument("output_filepath", type=click.Path())
+@click.argument("output_dir", type=click.Path())
 @click.option("--mlflow_run_name", type=str, default="develop")
-@click.option("--batch_size", type=int, default=32)
-@click.option(
-    "--output_chart_dir", type=click.Path(), default="reports/figures/predict/"
-)
 def main(**kwargs):
 
     # init log
@@ -202,7 +197,7 @@ def main(**kwargs):
     logger.info(predicted_df.describe())
 
     # analysis
-    analysis(predicted_df, kwargs["output_chart_dir"])
+    analysis(predicted_df, kwargs["output_dir"])
 
     # cleanup
     mlflow.end_run()
