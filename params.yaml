@@ -7,7 +7,7 @@ train_params:
     batch_size: 64
     model_save_interval_epochs: 1
     proba_threshold: 0.5
-    dropout: 0.5
+    dropout_p: 0.5
     log_interval: 100
     loss_margin: 0.0
     hidden_dim: 384
@@ -18,7 +18,7 @@ train_params:
     batch_size: 64
     model_save_interval_epochs: 5
     proba_threshold: 0.5
-    dropout: 0.5
+    dropout_p: 0.5
     log_interval: 500
     loss_margin: 0.0
     hidden_dim: 128
@@ -29,7 +29,7 @@ train_params:
     batch_size: 64
     model_save_interval_epochs: 5
     proba_threshold: 0.5
-    dropout: 0.5
+    dropout_p: 0.5
     log_interval: 500
     loss_margin: 0.0
     hidden_dim: 128
