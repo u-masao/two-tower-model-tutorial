@@ -17,6 +17,22 @@ from src.modeling.data_loader import make_dataloader
 from src.modeling.model import TwoTowerModel
 
 
+def count_correct(
+    user_repr: torch.Tensor,
+    item_repr: torch.Tensor,
+    labels: torch.Tensor,
+    proba_threshold: float,
+    cosine_eps: float = 1e-8,
+):
+    # コサインを計算
+    cosine = F.cosine_similarity(user_repr, item_repr, dim=1, eps=cosine_eps)
+
+    # 正解件数をカウント
+    return (cosine > proba_threshold).eq(labels == 1).sum().item(), (
+        cosine > proba_threshold
+    ).sum().item()
+
+
 def train_epoch(
     model: TwoTowerModel,
     dataloader: DataLoader,
@@ -30,13 +46,15 @@ def train_epoch(
     # init vars
     train_loss = 0
     correct = 0
+    positive = 0
 
     # switch model to train mode
     model.train()
 
     with tqdm(dataloader["train"]) as pbar:
         for batch_idx, (user_embeds, item_embeds, labels) in enumerate(pbar):
-            # mini batch loop
+
+            # train
             optimizer.zero_grad()
             user_repr, item_repr = model(user_embeds, item_embeds)
             train_batch_loss = criterion(user_repr, item_repr, labels)
@@ -44,12 +62,14 @@ def train_epoch(
             train_batch_loss.backward()
             optimizer.step()
 
-            # コサインを計算
-            cosine = F.cosine_similarity(user_repr, item_repr, dim=1, eps=1e-8)
+            # コサインを計算し正解件数をカウント
+            batch_correct, batch_positive = count_correct(
+                user_repr, item_repr, labels, proba_threshold
+            )
+            correct += batch_correct
+            positive += batch_positive
 
-            # 正解件数をカウント
-            correct += (cosine > proba_threshold).eq(labels == 1).sum().item()
-
+            # logging
             if batch_idx % log_interval == 0:
                 pbar.set_description(f"train epoch={epoch}")
                 pbar.set_postfix(
@@ -62,19 +82,22 @@ def train_epoch(
                 step = len(pbar) * epoch + batch_idx
                 mlflow.log_metrics(metrics, step=step)
 
-    train_data_size = len(dataloader["test"].dataset)
+    # make metrics
+    train_data_size = len(dataloader["train"].dataset)
     train_loss /= train_data_size
     train_metrics = {
         "train.loss": train_loss,
         "train.data_size": train_data_size,
         "train.correct": correct,
         "train.accuracy": correct / train_data_size,
+        "train.positive": positive,
     }
     logger.info(f"{train_metrics=}")
     mlflow.log_metrics(
         train_metrics,
         step=epoch,
     )
+    return train_metrics
 
 
 def test_epoch(
@@ -86,29 +109,37 @@ def test_epoch(
     log_interval: int = 100,
     proba_threshold: float = 0.5,
 ):
-    model.eval()
+
+    # init vars
     test_loss = 0
     correct = 0
+    positive = 0
+
+    # switch model to eval
+    model.eval()
+
     with torch.no_grad():
         with tqdm(dataloader["test"]) as pbar:
             for batch_idx, (user_embeds, item_embeds, labels) in enumerate(
                 pbar
             ):
+                # 推論
                 user_repr, item_repr = model(user_embeds, item_embeds)
+
+                # calc loss
                 test_batch_loss = criterion(
                     user_repr, item_repr, labels
                 ).item()
                 test_loss += test_batch_loss
 
-                # コサインを計算
-                cosine = F.cosine_similarity(
-                    user_repr, item_repr, dim=1, eps=1e-8
-                )
-
                 # 正解件数をカウント
-                correct += (
-                    (cosine > proba_threshold).eq(labels == 1).sum().item()
+                batch_correct, batch_positive = count_correct(
+                    user_repr, item_repr, labels, proba_threshold
                 )
+                correct += batch_correct
+                positive += batch_positive
+
+                # logging
                 if batch_idx % log_interval == 0:
                     pbar.set_description(f"test epoch={epoch}")
                     pbar.set_postfix(
@@ -118,6 +149,7 @@ def test_epoch(
                     step = len(pbar) * epoch + batch_idx
                     mlflow.log_metrics(metrics, step=step)
 
+    # make metrics
     test_data_size = len(dataloader["test"].dataset)
     test_loss /= test_data_size
     test_metrics = {
@@ -125,12 +157,14 @@ def test_epoch(
         "test.data_size": test_data_size,
         "test.correct": correct,
         "test.accuracy": correct / test_data_size,
+        "test.positive": positive,
     }
     logger.info(f"{test_metrics=}")
     mlflow.log_metrics(
         test_metrics,
         step=epoch,
     )
+    return test_metrics
 
 
 def train(
