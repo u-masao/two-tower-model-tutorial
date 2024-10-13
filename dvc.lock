@@ -116,7 +116,7 @@ stages:
       size: 834300286
     - path: models/model.pth
       hash: md5
-      md5: 548693caff6016277dedb0c6d2c9d86c
+      md5: ca9ee46fc24ab32c4a8ce0a8592edf34
       size: 2368296
     - path: src/modeling/data_loader.py
       hash: md5
@@ -133,5 +133,32 @@ stages:
     outs:
     - path: data/processed/predicted.parquet
       hash: md5
-      md5: d85cb3195b5fb8a4120504fce04b432e
-      size: 363580
+      md5: 102a64d308fe965d6b767dc67573f248
+      size: 354645
+  train@benchmark:
+    cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
+      models/model.pth --num_epochs 10 --batch_size 64 --model_save_interval_epochs
+      1 --proba_threshold 0.5 --log_interval 100 --loss_margin 0.0 --hidden_dim 384
+      --output_dim 384 --lr 0.001
+    deps:
+    - path: data/interim/features.cloudpickle
+      hash: md5
+      md5: f2d0911ba9d9a19a6d8476f58d29f9e3
+      size: 834300286
+    - path: src/modeling/data_loader.py
+      hash: md5
+      md5: 6f27fb16cae0232f9524efd0a62e96d2
+      size: 1530
+    - path: src/modeling/model.py
+      hash: md5
+      md5: c39880347aa0964b274eefc5913d0c33
+      size: 856
+    - path: src/modeling/train.py
+      hash: md5
+      md5: c571aeeeacb158d4c5c1bb18acd2536c
+      size: 8515
+    outs:
+    - path: models/model.pth
+      hash: md5
+      md5: ca9ee46fc24ab32c4a8ce0a8592edf34
+      size: 2368296
