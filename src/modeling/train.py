@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from pathlib import Path
+from typing import Optional
 
 import click
 import mlflow
@@ -41,6 +42,7 @@ def train_epoch(
     epoch: int,
     log_interval: int = 100,
     proba_threshold: float = 0.5,
+    device: str = "cpu",
 ):
 
     # init vars
@@ -53,6 +55,11 @@ def train_epoch(
 
     with tqdm(dataloader["train"]) as pbar:
         for batch_idx, (user_embeds, item_embeds, labels) in enumerate(pbar):
+
+            # transfar to device
+            user_embeds = user_embeds.to(device)
+            item_embeds = item_embeds.to(device)
+            labels = labels.to(device)
 
             # train
             optimizer.zero_grad()
@@ -110,6 +117,7 @@ def test_epoch(
     epoch: int,
     log_interval: int = 100,
     proba_threshold: float = 0.5,
+    device: str = "cpu",
 ):
 
     # init vars
@@ -125,8 +133,16 @@ def test_epoch(
             for batch_idx, (user_embeds, item_embeds, labels) in enumerate(
                 pbar
             ):
+
+                # transfar to device
+                user_embeds = user_embeds.to(device)
+                item_embeds = item_embeds.to(device)
+                labels = labels.to(device)
+
                 # 推論
-                user_repr, item_repr = model(user_embeds, item_embeds)
+                user_repr, item_repr = model(
+                    user_embeds.to(device), item_embeds.to(device)
+                )
 
                 # calc loss
                 test_batch_loss = criterion(
@@ -183,6 +199,7 @@ def train(
     output_dim: int = 384,
     lr: float = 0.001,
     dropout_p: float = 0.5,
+    device: Optional[str] = None,
 ):
 
     # make output dir
@@ -194,6 +211,11 @@ def train(
     user_embed_dim = some_sample[0].shape[0]
     item_embed_dim = some_sample[1].shape[0]
 
+    # compute devcie
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"{device=}")
+
     # モデル、オプティマイザ、損失関数の定義
     model = TwoTowerModel(
         user_embed_dim=user_embed_dim,
@@ -201,7 +223,7 @@ def train(
         hidden_dim=hidden_dim,
         output_dim=output_dim,
         dropout_p=dropout_p,
-    )
+    ).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CosineEmbeddingLoss(margin=loss_margin)
 
@@ -215,6 +237,7 @@ def train(
             criterion,
             epoch,
             log_interval=log_interval,
+            device=device,
         )
 
         # evaluate
@@ -226,6 +249,7 @@ def train(
             epoch,
             log_interval=log_interval,
             proba_threshold=proba_threshold,
+            device=device,
         )
 
         if epoch % model_save_interval_epochs == 0:
@@ -258,6 +282,7 @@ def train(
 @click.option("--hidden_dim", type=int, default=384)
 @click.option("--output_dim", type=int, default=384)
 @click.option("--lr", type=float, default=0.001)
+@click.option("--device", type=str, default=None)
 def main(**kwargs):
 
     # init log
@@ -287,6 +312,7 @@ def main(**kwargs):
         output_dim=kwargs["output_dim"],
         lr=kwargs["lr"],
         dropout_p=kwargs["dropout_p"],
+        device=kwargs["device"],
     )
 
     # output file
