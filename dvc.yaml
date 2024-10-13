@@ -72,6 +72,9 @@ stages:
         data/interim/features.cloudpickle
         models/model_${key}.pth
         data/processed/predicted.parquet
+        --hidden_dim ${item.hidden_dim}
+        --output_dim ${item.output_dim}
+        --dropout ${item.dropout}
       deps:
       - src/modeling/model.py
       - src/modeling/data_loader.py
@@ -80,3 +83,16 @@ stages:
       - models/model_${key}.pth
       outs:
       - data/processed/predicted_${key}.parquet
+
+  evaluate:
+    foreach: ${train_params}
+    do:
+      cmd: >-
+        poetry run python -m src.evaluate
+        data/processed/predicted.parquet
+        reports/figures/evaluate-${key}/
+      deps:
+      - src/evaluate.py
+      - data/processed/predicted_${key}.parquet
+      outs:
+      - reports/figures/evaluate-${key}/
