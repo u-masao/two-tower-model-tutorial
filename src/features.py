@@ -1,9 +1,10 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import click
 import cloudpickle
 import mlflow
 import pandas as pd
+import torch
 import torch.nn.functional as F
 from loguru import logger
 from object_cache import object_cache
@@ -64,9 +65,11 @@ def embed(
     model_name: str = "intfloat/multilingual-e5-small",
     max_length=512,
     enable_normalize=False,
+    device: Optional[str] = None,
 ):
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModel.from_pretrained(model_name)
+    model = AutoModel.from_pretrained(model_name).to(device)
 
     # Tokenize the input texts
     batch_dict = tokenizer(
@@ -75,7 +78,7 @@ def embed(
         padding=True,
         truncation=True,
         return_tensors="pt",
-    )
+    ).to(device)
 
     outputs = model(**batch_dict)
     embeddings = average_pool(
@@ -86,15 +89,24 @@ def embed(
     if enable_normalize:
         embeddings = F.normalize(embeddings, p=2, dim=1)
 
-    return embeddings.detach().numpy()
+    return embeddings.cpu().detach().numpy()
 
 
 def embed_chunked(
-    data, sentences, data_name, data_key, data_prefix, chunk_size
+    data,
+    sentences,
+    data_name,
+    data_key,
+    data_prefix,
+    chunk_size,
+    device: str = "cpu",
 ):
     items = []
+
     for i in tqdm(range(0, len(sentences[data_name]), chunk_size)):
-        item_embeds = embed(sentences[data_name][i:].head(chunk_size))
+        item_embeds = embed(
+            sentences[data_name][i:].head(chunk_size), device=device
+        )
         temp_df = pd.DataFrame(
             item_embeds,
             index=data[data_name][data_key][i:].head(chunk_size),
@@ -104,7 +116,18 @@ def embed_chunked(
     return pd.concat(items)
 
 
-def build_features(dataset: Dict[str, Any], threshold=5, chunk_size=100):
+def build_features(
+    dataset: Dict[str, Any],
+    device: Optional[str] = None,
+    threshold: int = 5,
+    chunk_size: int = 100,
+):
+
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"{device=}")
+    mlflow.log_param("device", device)
+
     result = {}
     for category in ["train", "test"]:
 
@@ -113,12 +136,24 @@ def build_features(dataset: Dict[str, Any], threshold=5, chunk_size=100):
 
         # make user embeds
         users_df = embed_chunked(
-            dataset[category], sentences, "users", "user-id", "u", chunk_size
+            dataset[category],
+            sentences,
+            "users",
+            "user-id",
+            "u",
+            chunk_size,
+            device=device,
         )
 
         # make item embeds
         items_df = embed_chunked(
-            dataset[category], sentences, "items", "isbn", "i", chunk_size
+            dataset[category],
+            sentences,
+            "items",
+            "isbn",
+            "i",
+            chunk_size,
+            device=device,
         )
 
         # merge
@@ -135,7 +170,8 @@ def build_features(dataset: Dict[str, Any], threshold=5, chunk_size=100):
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
 @click.option("--mlflow_run_name", type=str, default="develop")
-@click.option("--chunk_size", type=int, default=1000)
+@click.option("--chunk_size", type=int, default=500)
+@click.option("--device", type=str, default=None)
 def main(**kwargs):
 
     # init log
@@ -151,7 +187,9 @@ def main(**kwargs):
     dataset = load_dataset(kwargs["input_filepath"])
 
     # build features
-    features = build_features(dataset, chunk_size=kwargs["chunk_size"])
+    features = build_features(
+        dataset, chunk_size=kwargs["chunk_size"], device=kwargs["device"]
+    )
 
     # output file
     cloudpickle.dump(features, open(kwargs["output_filepath"], "wb"))
