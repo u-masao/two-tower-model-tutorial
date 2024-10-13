@@ -86,11 +86,13 @@ def train_epoch(
     train_data_size = len(dataloader["train"].dataset)
     train_loss /= train_data_size
     train_metrics = {
+        "train.epoch": epoch,
+        "train.proba.threshold": proba_threshold,
         "train.loss": train_loss,
         "train.data_size": train_data_size,
         "train.correct": correct,
         "train.accuracy": correct / train_data_size,
-        "train.positive": positive,
+        "train.pred.positive": positive,
     }
     logger.info(f"{train_metrics=}")
     mlflow.log_metrics(
@@ -153,11 +155,13 @@ def test_epoch(
     test_data_size = len(dataloader["test"].dataset)
     test_loss /= test_data_size
     test_metrics = {
+        "test.epoch": epoch,
+        "test.proba.threshold": proba_threshold,
         "test.loss": test_loss,
         "test.data_size": test_data_size,
         "test.correct": correct,
         "test.accuracy": correct / test_data_size,
-        "test.positive": positive,
+        "test.pred.positive": positive,
     }
     logger.info(f"{test_metrics=}")
     mlflow.log_metrics(
@@ -178,6 +182,7 @@ def train(
     hidden_dim: int = 384,
     output_dim: int = 384,
     lr: float = 0.001,
+    dropout_p: float = 0.5,
 ):
 
     # make output dir
@@ -195,6 +200,7 @@ def train(
         item_embed_dim=item_embed_dim,
         hidden_dim=hidden_dim,
         output_dim=output_dim,
+        dropout_p=dropout_p,
     )
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CosineEmbeddingLoss(margin=loss_margin)
@@ -202,7 +208,7 @@ def train(
     # train evaluate loop
     for epoch in range(num_epochs):
         # train
-        train_epoch(
+        train_metrics = train_epoch(
             model,
             dataloader,
             optimizer,
@@ -211,14 +217,8 @@ def train(
             log_interval=log_interval,
         )
 
-        if epoch % model_save_interval_epochs == 0:
-            torch.save(
-                model.state_dict(),
-                output_model_dir / f"model_epoch{epoch:04}.pth",
-            )
-
         # evaluate
-        test_epoch(
+        test_metrics = test_epoch(
             model,
             dataloader,
             optimizer,
@@ -227,6 +227,18 @@ def train(
             log_interval=log_interval,
             proba_threshold=proba_threshold,
         )
+
+        if epoch % model_save_interval_epochs == 0:
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "train_metrics": train_metrics,
+                    "test_metrics": test_metrics,
+                },
+                output_model_dir / f"checkpoint_{epoch:04}.pth",
+            )
 
     return model
 
@@ -242,6 +254,7 @@ def train(
 @click.option("--proba_threshold", type=float, default=0.5)
 @click.option("--log_interval", type=int, default=500)
 @click.option("--loss_margin", type=float, default=0.5)
+@click.option("--dropout_p", type=float, default=0.5)
 @click.option("--hidden_dim", type=int, default=384)
 @click.option("--output_dim", type=int, default=384)
 @click.option("--lr", type=float, default=0.001)
@@ -273,6 +286,7 @@ def main(**kwargs):
         hidden_dim=kwargs["hidden_dim"],
         output_dim=kwargs["output_dim"],
         lr=kwargs["lr"],
+        dropout_p=kwargs["dropout_p"],
     )
 
     # output file
