@@ -155,12 +155,12 @@ stages:
       size: 856
     - path: src/modeling/train.py
       hash: md5
-      md5: b8503ae80d728ef321beddf8dfdf48e4
-      size: 10023
+      md5: dddd965833d9aa7ac031b0377e8d2ca5
+      size: 10002
     outs:
     - path: models/model_benchmark.pth
       hash: md5
-      md5: 55a9f7f7366f18d166dbf3c5c83821c9
+      md5: 9d646139dc6bfb09d376be3ef12758b1
       size: 2369056
   train@setup_1:
     cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
@@ -182,12 +182,12 @@ stages:
       size: 856
     - path: src/modeling/train.py
       hash: md5
-      md5: b8503ae80d728ef321beddf8dfdf48e4
-      size: 10023
+      md5: dddd965833d9aa7ac031b0377e8d2ca5
+      size: 10002
     outs:
     - path: models/model_setup_1.pth
       hash: md5
-      md5: 90d725ebb1314017e9f31242d61c0c4b
+      md5: 1c98d94595a99568272cc14f5dd472fd
       size: 463816
   train@setup_2:
     cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
@@ -209,10 +209,151 @@ stages:
       size: 856
     - path: src/modeling/train.py
       hash: md5
-      md5: b8503ae80d728ef321beddf8dfdf48e4
-      size: 10023
+      md5: dddd965833d9aa7ac031b0377e8d2ca5
+      size: 10002
     outs:
     - path: models/model_setup_2.pth
       hash: md5
-      md5: 7a786d616bb4f9cf97094819f17f9d80
+      md5: aea473a5340afac31f7c243fc834757c
       size: 463816
+  predict@benchmark:
+    cmd: poetry run python -m src.modeling.predict data/interim/features.cloudpickle
+      models/model_benchmark.pth data/processed/predicted_benchmark.parquet --device
+      cuda --hidden_dim 384 --output_dim 384 --dropout_p 0.5
+    deps:
+    - path: data/interim/features.cloudpickle
+      hash: md5
+      md5: 64cd57f894f4144df3b6dd6a7403add7
+      size: 14954411
+    - path: models/model_benchmark.pth
+      hash: md5
+      md5: 9d646139dc6bfb09d376be3ef12758b1
+      size: 2369056
+    - path: src/modeling/data_loader.py
+      hash: md5
+      md5: 6f27fb16cae0232f9524efd0a62e96d2
+      size: 1530
+    - path: src/modeling/model.py
+      hash: md5
+      md5: c39880347aa0964b274eefc5913d0c33
+      size: 856
+    - path: src/modeling/predict.py
+      hash: md5
+      md5: b13131784164031f02b4b3ccf1d9c11d
+      size: 3398
+    outs:
+    - path: data/processed/predicted_benchmark.parquet
+      hash: md5
+      md5: 6909a86dae20a202b05266668d5bf359
+      size: 2484
+  predict@setup_1:
+    cmd: poetry run python -m src.modeling.predict data/interim/features.cloudpickle
+      models/model_setup_1.pth data/processed/predicted_setup_1.parquet --device cuda
+      --hidden_dim 128 --output_dim 64 --dropout_p 0.5
+    deps:
+    - path: data/interim/features.cloudpickle
+      hash: md5
+      md5: 64cd57f894f4144df3b6dd6a7403add7
+      size: 14954411
+    - path: models/model_setup_1.pth
+      hash: md5
+      md5: 1c98d94595a99568272cc14f5dd472fd
+      size: 463816
+    - path: src/modeling/data_loader.py
+      hash: md5
+      md5: 6f27fb16cae0232f9524efd0a62e96d2
+      size: 1530
+    - path: src/modeling/model.py
+      hash: md5
+      md5: c39880347aa0964b274eefc5913d0c33
+      size: 856
+    - path: src/modeling/predict.py
+      hash: md5
+      md5: b13131784164031f02b4b3ccf1d9c11d
+      size: 3398
+    outs:
+    - path: data/processed/predicted_setup_1.parquet
+      hash: md5
+      md5: 20a420c2a63c8873c766318d1cc49da5
+      size: 2480
+  predict@setup_2:
+    cmd: poetry run python -m src.modeling.predict data/interim/features.cloudpickle
+      models/model_setup_2.pth data/processed/predicted_setup_2.parquet --device cuda
+      --hidden_dim 128 --output_dim 64 --dropout_p 0.5
+    deps:
+    - path: data/interim/features.cloudpickle
+      hash: md5
+      md5: 64cd57f894f4144df3b6dd6a7403add7
+      size: 14954411
+    - path: models/model_setup_2.pth
+      hash: md5
+      md5: aea473a5340afac31f7c243fc834757c
+      size: 463816
+    - path: src/modeling/data_loader.py
+      hash: md5
+      md5: 6f27fb16cae0232f9524efd0a62e96d2
+      size: 1530
+    - path: src/modeling/model.py
+      hash: md5
+      md5: c39880347aa0964b274eefc5913d0c33
+      size: 856
+    - path: src/modeling/predict.py
+      hash: md5
+      md5: b13131784164031f02b4b3ccf1d9c11d
+      size: 3398
+    outs:
+    - path: data/processed/predicted_setup_2.parquet
+      hash: md5
+      md5: 2a189c3fa29e2768e640674c1a45b72f
+      size: 2481
+  evaluate@benchmark:
+    cmd: poetry run python -m src.evaluate data/processed/predicted.parquet reports/figures/evaluate-benchmark/
+    deps:
+    - path: data/processed/predicted_benchmark.parquet
+      hash: md5
+      md5: 6909a86dae20a202b05266668d5bf359
+      size: 2484
+    - path: src/evaluate.py
+      hash: md5
+      md5: 32e780df4df29c7a5ab4c73600e21ee5
+      size: 5482
+    outs:
+    - path: reports/figures/evaluate-benchmark/
+      hash: md5
+      md5: fdebc3d8a1e1dfd81c77f69a78b0454f.dir
+      size: 90574
+      nfiles: 1
+  evaluate@setup_1:
+    cmd: poetry run python -m src.evaluate data/processed/predicted.parquet reports/figures/evaluate-setup_1/
+    deps:
+    - path: data/processed/predicted_setup_1.parquet
+      hash: md5
+      md5: 20a420c2a63c8873c766318d1cc49da5
+      size: 2480
+    - path: src/evaluate.py
+      hash: md5
+      md5: 32e780df4df29c7a5ab4c73600e21ee5
+      size: 5482
+    outs:
+    - path: reports/figures/evaluate-setup_1/
+      hash: md5
+      md5: fdebc3d8a1e1dfd81c77f69a78b0454f.dir
+      size: 90574
+      nfiles: 1
+  evaluate@setup_2:
+    cmd: poetry run python -m src.evaluate data/processed/predicted.parquet reports/figures/evaluate-setup_2/
+    deps:
+    - path: data/processed/predicted_setup_2.parquet
+      hash: md5
+      md5: 2a189c3fa29e2768e640674c1a45b72f
+      size: 2481
+    - path: src/evaluate.py
+      hash: md5
+      md5: 32e780df4df29c7a5ab4c73600e21ee5
+      size: 5482
+    outs:
+    - path: reports/figures/evaluate-setup_2/
+      hash: md5
+      md5: fdebc3d8a1e1dfd81c77f69a78b0454f.dir
+      size: 90574
+      nfiles: 1
