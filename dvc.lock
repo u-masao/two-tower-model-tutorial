@@ -137,7 +137,7 @@ stages:
       size: 354645
   train@benchmark:
     cmd: poetry run python -m src.modeling.train data/interim/features.cloudpickle
-      models/model.pth --num_epochs 10 --batch_size 64 --model_save_interval_epochs
+      models/model_benchmark.pth --num_epochs 10 --batch_size 64 --model_save_interval_epochs
       1 --proba_threshold 0.5 --log_interval 100 --loss_margin 0.0 --hidden_dim 384
       --output_dim 384 --lr 0.001
     deps:
@@ -155,10 +155,10 @@ stages:
       size: 856
     - path: src/modeling/train.py
       hash: md5
-      md5: c571aeeeacb158d4c5c1bb18acd2536c
-      size: 8515
+      md5: 15e227c2257bf862a46f9f89746cc9ed
+      size: 9131
     outs:
-    - path: models/model.pth
+    - path: models/model_benchmark.pth
       hash: md5
-      md5: ca9ee46fc24ab32c4a8ce0a8592edf34
-      size: 2368296
+      md5: c7ad8997440a85ce7d6fdef779ffca52
+      size: 2368928
